@@ -1,50 +1,54 @@
-# Welcome to your Expo app 👋
+# AnText 📝
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AnText is a minimalist, distraction-free text editor for mobile devices and the web, built with **React Native** and **Expo**. The project's goal is to provide a clean and focused environment for reading and editing text files directly on your device.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+- **Distraction-Free Design:** A minimalist UI that keeps the focus on the text.
+- **File Management:** Open and edit any text or code files from local storage.
+- **Secure Saving:** Support for the Android Storage Access Framework (SAF) to securely write files back.
+- **Dark & Light Mode:** Full support for system-wide color schemes.
+- **Cross-Platform:** Runs on Android, iOS, and the web.
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+Make sure you have [Node.js](https://nodejs.org/) installed.
+
+### Installation
+
+1. Clone (or download) this repository.
+2. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
+### Running the App
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Start the Expo development server:
 
 ```bash
-npm run reset-project
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+You can then open the app via the **Expo Go** app on your smartphone (by scanning the QR code) or in an emulator/simulator.
 
-## Learn more
+## 🛠 Tech Stack
 
-To learn more about developing your project with Expo, look at the following resources:
+- **Framework:** [Expo](https://expo.dev/) / React Native
+- **Navigation:** [Expo Router](https://docs.expo.dev/router/introduction/) (File-based Routing)
+- **Language:** TypeScript / JavaScript
+- **Animations:** React Native Reanimated
+- **Icons:** Expo Vector Icons (Ionicons)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📁 Project Structure
 
-## Join the community
+- `/app`: Contains the screens (Home, Editor) and the root layout.
+- `/components`: Reusable UI elements such as the editor menu.
+- `/src`: Core logic for file access (`storage.js`) and the theme system.
+- `/hooks`: Custom hooks for color schemes.
 
-Join our community of developers creating universal apps.
+## 📝 License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This project is licensed under the [MIT License](LICENSE.md).
