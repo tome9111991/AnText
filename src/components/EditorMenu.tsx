@@ -6,9 +6,20 @@ import { COLORS, FONTS, SIZES } from '../theme';
 interface EditorMenuProps {
     visible: boolean;
     onClose: () => void;
+    showLineNumbers: boolean;
+    onToggleLineNumbers: () => void;
+    onCopyAll: () => void;
+    onSelectAll: () => void;
+    onReload: () => void;
+    onClear: () => void;
+    onSettings: () => void;
+    onExit: () => void;
 }
 
-export default function EditorMenu({ visible, onClose }: EditorMenuProps) {
+export default function EditorMenu({
+    visible, onClose, showLineNumbers, onToggleLineNumbers,
+    onCopyAll, onSelectAll, onReload, onClear, onSettings, onExit
+}: EditorMenuProps) {
     return (
         <Modal
             visible={visible}
@@ -24,14 +35,41 @@ export default function EditorMenu({ visible, onClose }: EditorMenuProps) {
                                 <Text style={styles.menuTitle}>Options</Text>
                             </View>
 
-                            <TouchableOpacity style={styles.menuItem} onPress={() => { console.log("Dummy Item 1"); onClose(); }}>
-                                <Ionicons name="settings-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
-                                <Text style={styles.menuText}>Settings (Dummy)</Text>
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onToggleLineNumbers(); onClose(); }}>
+                                <Ionicons name={showLineNumbers ? "checkbox-outline" : "square-outline"} size={24} color={COLORS.text} style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Show Line Numbers</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.menuItem} onPress={() => { console.log("Dummy Item 2"); onClose(); }}>
-                                <Ionicons name="information-circle-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
-                                <Text style={styles.menuText}>Info (Dummy)</Text>
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onCopyAll(); onClose(); }}>
+                                <Ionicons name="copy-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Copy All Text</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onSelectAll(); onClose(); }}>
+                                <Ionicons name="scan-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Select All</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onReload(); onClose(); }}>
+                                <Ionicons name="refresh-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Reload File</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onSettings(); onClose(); }}>
+                                <Ionicons name="settings-outline" size={24} color={COLORS.text} style={styles.menuIcon} />
+                                <Text style={styles.menuText}>Settings</Text>
+                            </TouchableOpacity>
+
+                            <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 4 }} />
+
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onClear(); onClose(); }}>
+                                <Ionicons name="trash-outline" size={24} color={COLORS.error} style={styles.menuIcon} />
+                                <Text style={[styles.menuText, { color: COLORS.error }]}>Clear Content</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.menuItem} onPress={() => { onExit(); onClose(); }}>
+                                <Ionicons name="exit-outline" size={24} color={COLORS.error} style={styles.menuIcon} />
+                                <Text style={[styles.menuText, { color: COLORS.error }]}>Exit App</Text>
                             </TouchableOpacity>
 
                         </View>

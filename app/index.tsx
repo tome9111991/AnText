@@ -63,10 +63,25 @@ export default function HomeScreen() {
         }
     };
 
+    const handleCreateNewFile = () => {
+        router.push({
+            pathname: '/editor',
+            params: {
+                uri: 'new',
+                name: 'Untitled.txt',
+                content: '',
+                mimeType: 'text/plain'
+            }
+        });
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>AnText</Text>
+                <TouchableOpacity onPress={() => router.push('/settings')}>
+                    <Ionicons name="settings-outline" size={28} color={COLORS.text} />
+                </TouchableOpacity>
             </View>
 
             <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
@@ -93,6 +108,14 @@ export default function HomeScreen() {
                     )}
                 </TouchableOpacity>
             </Animated.View>
+
+            <TouchableOpacity
+                style={styles.fab}
+                activeOpacity={0.8}
+                onPress={handleCreateNewFile}
+            >
+                <Ionicons name="add" size={32} color={COLORS.background} />
+            </TouchableOpacity>
         </View>
     );
 }
@@ -103,6 +126,9 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         paddingTop: 60,
         paddingBottom: 20,
         paddingHorizontal: SIZES.extraLarge,
@@ -169,5 +195,21 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         fontFamily: FONTS.bold,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 40,
+        right: 30,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: COLORS.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
     }
 });

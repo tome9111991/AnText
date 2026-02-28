@@ -73,3 +73,29 @@ export const saveFileContent = async (uri, content, mimeType = 'text/plain') => 
         throw error;
     }
 };
+
+export const saveNewFileContent = async (content, fileName = 'Untitled.txt', mimeType = 'text/plain') => {
+    try {
+        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+        if (!permissions.granted) {
+            throw new Error('Permission denied to save file.');
+        }
+
+        const newFileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+            permissions.directoryUri,
+            fileName,
+            mimeType
+        );
+
+        await FileSystem.writeAsStringAsync(newFileUri, content, {
+            encoding: 'utf8',
+        });
+
+        return newFileUri;
+    } catch (error) {
+        console.error('Error saving new file:', error);
+        throw error;
+    }
+};
+

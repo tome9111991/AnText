@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, PanResponder, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, BackHandler, KeyboardAvoidingView, PanResponder, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import EditorMenu from '../src/components/EditorMenu';
-import { saveFileContent } from '../src/storage';
+import { useSettings } from '../src/contexts/SettingsContext';
+import { saveFileContent, saveNewFileContent } from '../src/storage';
 import { COLORS, FONTS, SIZES } from '../src/theme';
 
 export default function EditorScreen() {
@@ -18,18 +19,27 @@ export default function EditorScreen() {
     const insets = useSafeAreaInsets();
     const bottomOffset = Math.max(0, insets.bottom);
 
+    const { settings } = useSettings();
+
+    const [currentUri, setCurrentUri] = useState<string | null>(uri);
     const [content, setContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isWordWrap, setIsWordWrap] = useState(false);
+    const [isWordWrap, setIsWordWrap] = useState(settings.defaultWordWrap);
     const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [showLineNumbers, setShowLineNumbers] = useState(settings.defaultShowLineNumbers);
+
+    useEffect(() => {
+        setIsWordWrap(settings.defaultWordWrap);
+        setShowLineNumbers(settings.defaultShowLineNumbers);
+    }, [settings.defaultWordWrap, settings.defaultShowLineNumbers]);
 
     // Undo/Redo State
     const [history, setHistory] = useState<string[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const historyState = useRef({ history: [] as string[], index: -1 });
     const isUndoRedoActive = useRef(false);
-    const historyTimeout = useRef<NodeJS.Timeout | null>(null);
+    const historyTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const saveToHistory = (newText: string) => {
         const { history, index } = historyState.current;
@@ -77,8 +87,8 @@ export default function EditorScreen() {
 
     const vScrollOpacity = useRef(new Animated.Value(0)).current;
     const hScrollOpacity = useRef(new Animated.Value(0)).current;
-    const vScrollTimeout = useRef<NodeJS.Timeout | null>(null);
-    const hScrollTimeout = useRef<NodeJS.Timeout | null>(null);
+    const vScrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const hScrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (vScrollTimeout.current) clearTimeout(vScrollTimeout.current);
@@ -244,6 +254,9 @@ export default function EditorScreen() {
     // Determine if it's likely a code file to default monospace
     const isCodeFile = name ? /\.(js|ts|jsx|tsx|py|json|md|html|css|java|c|cpp|cs|go|rs|php|rb|sh)$/i.test(name) : false;
 
+    const lineCount = content.split('\n').length || 1;
+    const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
+
 
     const handleTextChange = (text: string) => {
         setContent(text);
@@ -302,6 +315,63 @@ export default function EditorScreen() {
         setSelection({ start: newCursor, end: newCursor });
     };
 
+    const handleCopyAll = async () => {
+        await Clipboard.setStringAsync(content);
+        Alert.alert('Copied', 'All text copied to clipboard.', [{ text: 'OK' }]);
+    };
+
+    const handleSelectAll = () => {
+        setSelection({ start: 0, end: content.length });
+        setTimeout(() => inputRef.current?.focus(), 100);
+    };
+
+    const handleReloadFile = () => {
+        if (!hasUnsavedChanges) return;
+        Alert.alert("Reload File", "Discard all unsaved changes and revert to original?", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Reload",
+                style: "destructive",
+                onPress: () => {
+                    const original = initialContent || '';
+                    setContent(original);
+                    setHasUnsavedChanges(false);
+                    historyState.current = { history: [original], index: 0 };
+                    setHistory([original]);
+                    setHistoryIndex(0);
+                }
+            }
+        ]);
+    };
+
+    const handleClearAll = () => {
+        Alert.alert("Clear Content", "Are you sure you want to delete everything in this file?", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Clear",
+                style: "destructive",
+                onPress: () => {
+                    handleTextChange('');
+                }
+            }
+        ]);
+    };
+
+    const handleExitApp = () => {
+        if (hasUnsavedChanges) {
+            Alert.alert(
+                'Unsaved Changes',
+                'You have unsaved changes. Are you sure you want to exit without saving?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Exit App', style: 'destructive', onPress: () => BackHandler.exitApp() }
+                ]
+            );
+        } else {
+            BackHandler.exitApp();
+        }
+    };
+
     const handleUndo = () => {
         if (historyTimeout.current) clearTimeout(historyTimeout.current);
         const { history, index } = historyState.current;
@@ -353,13 +423,25 @@ export default function EditorScreen() {
     };
 
     const handleSave = async () => {
-        if (!uri) return;
+        if (!currentUri) return;
         setIsSaving(true);
 
         try {
-            await saveFileContent(uri, content, mimeType);
-            setHasUnsavedChanges(false);
-            Alert.alert('Success', 'File saved successfully!');
+            if (currentUri === 'new') {
+                const newUri = await saveNewFileContent(content, name || 'Untitled.txt', mimeType || 'text/plain');
+                if (newUri) {
+                    setCurrentUri(newUri);
+                    setHasUnsavedChanges(false);
+                    Alert.alert('Success', 'File created and saved successfully!');
+                }
+            } else {
+                const newUri = await saveFileContent(currentUri, content, mimeType);
+                if (newUri && typeof newUri === 'string' && newUri !== currentUri) {
+                    setCurrentUri(newUri);
+                }
+                setHasUnsavedChanges(false);
+                Alert.alert('Success', 'File saved successfully!');
+            }
         } catch (error) {
             Alert.alert('Save Error', 'Could not save the file automatically. You may need to grant storage permissions or save it as a new file.');
         } finally {
@@ -382,7 +464,7 @@ export default function EditorScreen() {
         }
     };
 
-    if (!uri) {
+    if (!currentUri) {
         return (
             <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>No file path provided.</Text>
@@ -395,7 +477,18 @@ export default function EditorScreen() {
 
     return (
         <View style={styles.container}>
-            <EditorMenu visible={isMenuVisible} onClose={() => setIsMenuVisible(false)} />
+            <EditorMenu
+                visible={isMenuVisible}
+                onClose={() => setIsMenuVisible(false)}
+                showLineNumbers={showLineNumbers}
+                onToggleLineNumbers={() => setShowLineNumbers(!showLineNumbers)}
+                onCopyAll={handleCopyAll}
+                onSelectAll={handleSelectAll}
+                onReload={handleReloadFile}
+                onClear={handleClearAll}
+                onSettings={() => router.push('/settings')}
+                onExit={handleExitApp}
+            />
 
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => setIsMenuVisible(true)} style={styles.iconButton}>
@@ -483,39 +576,56 @@ export default function EditorScreen() {
                         scrollEventThrottle={16}
                         showsVerticalScrollIndicator={false}
                     >
-                        <ScrollView
-                            ref={horizontalScrollRef}
-                            horizontal={!isWordWrap}
-                            bounces={false}
-                            contentContainerStyle={!isWordWrap ? styles.scrollContentHorizontal : { flexGrow: 1 }}
-                            style={styles.horizontalScrollWrapper}
-                            showsHorizontalScrollIndicator={false}
-                            onContentSizeChange={(w, _h) => setContentWidth(w)}
-                            onLayout={(e) => setVisibleWidth(e.nativeEvent.layout.width)}
-                            onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
-                            scrollEventThrottle={16}
-                        >
-                            <TextInput
-                                ref={inputRef}
-                                style={[
-                                    styles.contentInput,
-                                    (isCodeFile || !isWordWrap) ? styles.monoText : null,
-                                    !isWordWrap && { minWidth: '100%', paddingBottom: 60, width: 3000 }
-                                ]}
-                                placeholder="File is empty..."
-                                placeholderTextColor={COLORS.textHint}
-                                value={content}
-                                onChangeText={handleTextChange}
-                                selection={selection}
-                                onSelectionChange={handleSelectionChange}
-                                multiline
-                                scrollEnabled={false}
-                                textAlignVertical="top"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                spellCheck={false}
-                            />
-                        </ScrollView>
+                        <View style={styles.editorRow}>
+                            {showLineNumbers && (
+                                <Text
+                                    style={[
+                                        styles.contentInput,
+                                        styles.lineNumberColumn,
+                                        (isCodeFile || !isWordWrap) ? styles.monoText : null,
+                                        !isWordWrap && { paddingBottom: 60 }
+                                    ]}
+                                    selectable={false}
+                                >
+                                    {lineNumbers}
+                                </Text>
+                            )}
+
+                            <ScrollView
+                                ref={horizontalScrollRef}
+                                horizontal={!isWordWrap}
+                                bounces={false}
+                                contentContainerStyle={!isWordWrap ? styles.scrollContentHorizontal : { flexGrow: 1 }}
+                                style={styles.horizontalScrollWrapper}
+                                showsHorizontalScrollIndicator={false}
+                                onContentSizeChange={(w, _h) => setContentWidth(w)}
+                                onLayout={(e) => setVisibleWidth(e.nativeEvent.layout.width)}
+                                onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
+                                scrollEventThrottle={16}
+                            >
+                                <TextInput
+                                    ref={inputRef}
+                                    style={[
+                                        styles.contentInput,
+                                        (isCodeFile || !isWordWrap) ? styles.monoText : null,
+                                        !isWordWrap && { minWidth: '100%', paddingBottom: 60, width: 3000 },
+                                        showLineNumbers && { paddingLeft: 8 }
+                                    ]}
+                                    placeholder="File is empty..."
+                                    placeholderTextColor={COLORS.textHint}
+                                    value={content}
+                                    onChangeText={handleTextChange}
+                                    selection={selection}
+                                    onSelectionChange={handleSelectionChange}
+                                    multiline
+                                    scrollEnabled={false}
+                                    textAlignVertical="top"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    spellCheck={false}
+                                />
+                            </ScrollView>
+                        </View>
                     </ScrollView>
 
                     {/* Custom Fast Scrollbar */}
@@ -655,6 +765,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
     },
     horizontalScrollWrapper: {
+        flex: 1,
         minHeight: '100%',
     },
     scrollContentHorizontal: {
@@ -698,6 +809,22 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         padding: SIZES.large,
         minHeight: '100%',
+    },
+    editorRow: {
+        flexDirection: 'row',
+        minHeight: '100%',
+    },
+    lineNumberColumn: {
+        flex: 0,
+        minWidth: 30,
+        textAlign: 'right',
+        color: COLORS.textHint,
+        paddingLeft: SIZES.base,
+        paddingRight: SIZES.small,
+        backgroundColor: COLORS.surface,
+        borderRightWidth: 1,
+        borderRightColor: COLORS.border,
+        zIndex: 10,
     },
     monoText: {
         fontFamily: FONTS.mono,
