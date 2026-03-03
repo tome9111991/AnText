@@ -41,10 +41,21 @@ export default function HomeScreen() {
 
         const handleUrl = async (url: string | null) => {
             if (!url) return;
-            if (url.startsWith('content://') || url.startsWith('file://')) {
+
+            let targetUrl = url;
+            // File managers may trigger an intent that Expo intercepts and prepends with our app scheme
+            if (targetUrl.startsWith('antext://') && (targetUrl.includes('fileprovider') || targetUrl.includes('root/storage') || targetUrl.includes('.filemanager'))) {
+                targetUrl = targetUrl.replace('antext://', 'content://');
+            } else if (targetUrl.startsWith('antext://content/')) {
+                targetUrl = targetUrl.replace('antext://content/', 'content://');
+            } else if (targetUrl.startsWith('antext://file/')) {
+                targetUrl = targetUrl.replace('antext://file/', 'file://');
+            }
+
+            if (targetUrl.startsWith('content://') || targetUrl.startsWith('file://')) {
                 setLoading(true);
                 try {
-                    const fileData = await readFileFromUri(url);
+                    const fileData = await readFileFromUri(targetUrl);
                     router.push({
                         pathname: '/editor',
                         params: {
