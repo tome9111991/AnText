@@ -19,7 +19,80 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "mimeType": "text/*"
+            },
+            {
+              "mimeType": "application/json"
+            },
+            {
+              "mimeType": "application/xml"
+            },
+            {
+              "mimeType": "application/javascript"
+            },
+            {
+              "mimeType": "application/x-javascript"
+            },
+            {
+              "mimeType": "application/x-python"
+            },
+            {
+              "mimeType": "application/x-sh"
+            },
+            {
+              "mimeType": "application/csv"
+            },
+            {
+              "mimeType": "application/x-yaml"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "EDIT",
+          "data": [
+            {
+              "mimeType": "text/*"
+            },
+            {
+              "mimeType": "application/json"
+            },
+            {
+              "mimeType": "application/xml"
+            },
+            {
+              "mimeType": "application/javascript"
+            },
+            {
+              "mimeType": "application/x-javascript"
+            },
+            {
+              "mimeType": "application/x-python"
+            },
+            {
+              "mimeType": "application/x-sh"
+            },
+            {
+              "mimeType": "application/csv"
+            },
+            {
+              "mimeType": "application/x-yaml"
+            }
+          ],
+          "category": [
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",

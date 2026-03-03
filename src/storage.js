@@ -30,6 +30,31 @@ export const pickFileAndRead = async () => {
     }
 };
 
+export const readFileFromUri = async (uri) => {
+    try {
+        const response = await fetch(uri);
+        const content = await response.text();
+
+        let name = 'Opened File';
+        try {
+            const decoded = decodeURIComponent(uri);
+            const parts = decoded.split('/');
+            const lastPart = parts[parts.length - 1];
+            if (lastPart) name = lastPart;
+        } catch (e) { }
+
+        return {
+            uri: uri,
+            name: name,
+            content: content,
+            mimeType: 'text/plain',
+        };
+    } catch (error) {
+        console.error('Error reading file from uri:', error);
+        throw error;
+    }
+};
+
 export const saveFileContent = async (uri, content, mimeType = 'text/plain') => {
     try {
         // 1. Storage Access Framework (SAF) is usually required on Android 11+ to overwrite user files outside app dir.

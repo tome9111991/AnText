@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { pickFileAndRead } from '../src/storage';
+import { ActivityIndicator, Alert, Animated, Easing, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { pickFileAndRead, readFileFromUri } from '../src/storage';
 import { COLORS, FONTS, SIZES } from '../src/theme';
 
 export default function HomeScreen() {
@@ -38,6 +38,40 @@ export default function HomeScreen() {
                 })
             ])
         ).start();
+
+        const handleUrl = async (url: string | null) => {
+            if (!url) return;
+            if (url.startsWith('content://') || url.startsWith('file://')) {
+                setLoading(true);
+                try {
+                    const fileData = await readFileFromUri(url);
+                    router.push({
+                        pathname: '/editor',
+                        params: {
+                            uri: fileData.uri,
+                            name: fileData.name,
+                            content: fileData.content,
+                            mimeType: fileData.mimeType
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to open file intent:', error);
+                    Alert.alert('Error', 'Could not open the requested file.');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        Linking.getInitialURL().then(handleUrl);
+
+        const subscription = Linking.addEventListener('url', (event) => {
+            handleUrl(event.url);
+        });
+
+        return () => {
+            subscription.remove();
+        };
     }, []);
 
     const handleOpenFile = async () => {
