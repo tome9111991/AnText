@@ -1,11 +1,40 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 
+let PendingFile = null;
+
+export const setPendingFile = (fileData) => {
+    PendingFile = fileData;
+};
+
+export const getPendingFile = () => {
+    const file = PendingFile;
+    PendingFile = null;
+    return file;
+};
+
+export const loadFileContentStr = async (uri) => {
+    try {
+        if (!uri || uri === 'new') return '';
+        // Do NOT decodeURIComponent here, it destroys important path encoded segments from Android DocumentPicker
+        try {
+            return await FileSystem.readAsStringAsync(uri, { encoding: 'utf8' });
+        } catch (fsError) {
+            console.warn("FileSystem read failed, trying fetch...", fsError);
+            const response = await fetch(uri);
+            return await response.text();
+        }
+    } catch (error) {
+        console.error('Error in loadFileContentStr:', error);
+        throw error;
+    }
+};
+
 export const pickFileAndRead = async () => {
     try {
         const result = await DocumentPicker.getDocumentAsync({
-            type: '*/*', // Look for any files (like code files)
-            copyToCacheDirectory: false,
+            type: '*/*',
+            copyToCacheDirectory: false, // Prevents creating duplicate cache files for huge files
         });
 
         if (result.canceled) {
@@ -14,16 +43,14 @@ export const pickFileAndRead = async () => {
 
         const file = result.assets[0];
 
-        // Read the file content using fetch which natively supports content:// URIs on Android
-        const response = await fetch(file.uri);
-        const content = await response.text();
-
-        return {
+        const fileData = {
             uri: file.uri,
             name: file.name,
-            content: content,
             mimeType: file.mimeType,
         };
+        setPendingFile(fileData);
+
+        return fileData;
     } catch (error) {
         console.error('Error reading file:', error);
         throw error;
@@ -32,9 +59,6 @@ export const pickFileAndRead = async () => {
 
 export const readFileFromUri = async (uri) => {
     try {
-        const response = await fetch(uri);
-        const content = await response.text();
-
         let name = 'Opened File';
         try {
             const decoded = decodeURIComponent(uri);
@@ -43,17 +67,20 @@ export const readFileFromUri = async (uri) => {
             if (lastPart) name = lastPart;
         } catch (e) { }
 
-        return {
+        const fileData = {
             uri: uri,
             name: name,
-            content: content,
             mimeType: 'text/plain',
         };
+        setPendingFile(fileData);
+
+        return fileData;
     } catch (error) {
         console.error('Error reading file from uri:', error);
         throw error;
     }
 };
+
 
 export const saveFileContent = async (uri, content, mimeType = 'text/plain') => {
     try {

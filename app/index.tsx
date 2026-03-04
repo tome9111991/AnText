@@ -61,7 +61,6 @@ export default function HomeScreen() {
                         params: {
                             uri: fileData.uri,
                             name: fileData.name,
-                            content: fileData.content,
                             mimeType: fileData.mimeType
                         }
                     });
@@ -96,7 +95,6 @@ export default function HomeScreen() {
                     params: {
                         uri: fileData.uri,
                         name: fileData.name,
-                        content: fileData.content,
                         mimeType: fileData.mimeType
                     }
                 });
@@ -114,7 +112,6 @@ export default function HomeScreen() {
             params: {
                 uri: 'new',
                 name: 'Untitled.txt',
-                content: '',
                 mimeType: 'text/plain'
             }
         });
